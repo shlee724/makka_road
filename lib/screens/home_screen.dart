@@ -66,29 +66,25 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          NaverMap(
-            options: const NaverMapViewOptions(
-              initialCameraPosition: NCameraPosition(
-                target: NLatLng(36.3504, 127.3845), // 대전 중심
-                zoom: 12,
-              ),
-              locationButtonEnable: false, // FAB으로 직접 처리
-            ),
-            onMapReady: _onMapReady,
+      body: NaverMap(
+        options: const NaverMapViewOptions(
+          initialCameraPosition: NCameraPosition(
+            target: NLatLng(36.3504, 127.3845), // 대전 중심
+            zoom: 12,
           ),
-          // 하단 배너 자리 (광고 허락 전까지는 빈 영역)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 50,
-              color: Colors.grey[200],
-            ),
-          ),
-        ],
+          locationButtonEnable: false,
+        ),
+        onMapReady: _onMapReady,
+      ),
+      // 배너를 bottomNavigationBar 자리에 배치 — 지도 레이어 바깥이라 항상 보임
+      // SafeArea로 감싸서 회색 영역이 시스템 내비게이션 바(홈/뒤로가기 컨트롤) 위로 올라오게 함.
+      // 회색은 Container 전체(SafeArea 바깥 포함)에 칠해서 시스템 바 뒤까지 이어지게 하고,
+      // 실제 배너 높이(50)는 컨트롤에 가리지 않는 안전 영역 안에 배치.
+      bottomNavigationBar: Container(
+        color: Colors.grey[200],
+        child: const SafeArea(
+          child: SizedBox(height: 50),
+        ),
       ),
       // 내 위치 FAB — 탭하면 위치 권한 요청 후 지도 이동
       floatingActionButton: FloatingActionButton(
