@@ -1,32 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'config/naver_map_key.dart';
+import 'screens/home_screen.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FlutterNaverMap().init(clientId: naverMapClientId);
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'My App',
-      home: const HomeScreen(),
-    );
-  }
-}
-`
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('홈 화면'),
+    return MaterialApp(
+      title: '맠카로드',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        useMaterial3: true,
       ),
-      body: const Center(
-        child: Text('Hello Flutter'),
-      ),
+      home: const HomeScreen(),
     );
   }
 }
