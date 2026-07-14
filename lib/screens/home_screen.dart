@@ -2,54 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../data/sample_restaurants.dart';
 import '../models/restaurant.dart';
 import '../services/favorites_service.dart';
 import '../widgets/restaurant_search_bar.dart';
+import 'favorites_screen.dart';
 import 'restaurant_detail_sheet.dart';
-
-// 하드코딩된 샘플 맛집 3개 (나중에 Firestore로 교체).
-// address/phone/hours/menu/videoId/viewCount는 화면 2 테스트용 더미 데이터.
-const _sampleRestaurants = [
-  Restaurant(
-    id: '진앤키노',
-    name: '진앤키노',
-    address: '대전 대덕구 오정동 175-45',
-    lat: 36.3519,
-    lng: 127.4250,
-    phone: '042-000-0001',
-    hours: '매일 22:00 - 다음 날 05:00 (월, 수 정기휴무)',
-    menu: '오믈렛',
-    videoId: 'YHTMM5YXpQU',
-    viewCount: 13600000,
-    category: RestaurantCategory.restaurant,
-  ),
-  Restaurant(
-    id: '목수정',
-    name: '목수정',
-    address: '대전 중구 오류동 158-3',
-    lat: 36.3226,
-    lng: 127.4086,
-    phone: '042-522-5512',
-    hours: '매일 12:00 - 22:00',
-    menu: '치즈 한 모, 자몽 쥬스',
-    videoId: 'Ds3DwK8fdhQ',
-    viewCount: 4950000,
-    category: RestaurantCategory.cafeDessert,
-  ),
-  Restaurant(
-    id: '성심당',
-    name: '성심당',
-    address: '대전 중구 대종로480번길 15',
-    lat: 36.3286,
-    lng: 127.4276,
-    phone: '042-000-0003',
-    hours: '매일 08:00 - 22:00',
-    menu: '튀김소보로, 부추빵',
-    videoId: 'BIxmp63YnFE',
-    viewCount: 2980000,
-    category: RestaurantCategory.cafeDessert,
-  ),
-];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -85,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 마커 3개 생성 후 지도에 추가
     final Set<NAddableOverlay> overlays = {};
-    for (final restaurant in _sampleRestaurants) {
+    for (final restaurant in sampleRestaurants) {
       final marker = NMarker(
         id: restaurant.id,
         position: NLatLng(restaurant.lat, restaurant.lng),
@@ -120,6 +78,16 @@ class _HomeScreenState extends State<HomeScreen> {
     _markersById[restaurant.id]?.setIcon(
       _markerIcons[_markerIconKey(restaurant.category, isFavorite)],
     );
+  }
+
+  // 즐겨찾기 목록에서 가게를 고르면 그 가게로 카메라를 이동하고 상세 시트를 연다.
+  Future<void> _openFavorites() async {
+    final selected = await Navigator.push<Restaurant>(
+      context,
+      MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+    );
+    if (selected == null || !mounted) return;
+    await _openRestaurant(selected, moveCamera: true);
   }
 
   Future<void> _goToMyLocation() async {
@@ -164,9 +132,59 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: RestaurantSearchBar(
-                  restaurants: _sampleRestaurants,
+                  restaurants: sampleRestaurants,
                   onSelect: (restaurant) =>
                       _openRestaurant(restaurant, moveCamera: true),
+                ),
+              ),
+            ),
+          ),
+          // 내 위치 FAB — 탭하면 위치 권한 요청 후 지도 이동
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: 'myLocationFab',
+              onPressed: _goToMyLocation,
+              child: const Icon(Icons.my_location),
+            ),
+          ),
+          // 즐겨찾기 목록 진입 버튼 — 화면 중앙 하단의 납작한 알약 모양 버튼.
+          // FloatingActionButton.extended는 높이(56dp 고정)를 줄일 수 없어서
+          // Material + InkWell로 직접 만들어 높이를 낮췄다.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 16,
+            child: Center(
+              child: Material(
+                elevation: 4,
+                color: Theme.of(context).colorScheme.primaryContainer,
+                shape: const StadiumBorder(),
+                child: InkWell(
+                  customBorder: const StadiumBorder(),
+                  onTap: _openFavorites,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.star,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '즐겨찾기',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -182,11 +200,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const SafeArea(
           child: SizedBox(height: 50),
         ),
-      ),
-      // 내 위치 FAB — 탭하면 위치 권한 요청 후 지도 이동
-      floatingActionButton: FloatingActionButton(
-        onPressed: _goToMyLocation,
-        child: const Icon(Icons.my_location),
       ),
     );
   }
