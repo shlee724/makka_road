@@ -2,19 +2,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-// 하드코딩된 샘플 맛집 3개 (나중에 Firestore로 교체)
-class _Restaurant {
-  final String name;
-  final double lat;
-  final double lng;
+import '../models/restaurant.dart';
+import 'restaurant_detail_sheet.dart';
 
-  const _Restaurant({required this.name, required this.lat, required this.lng});
-}
-
+// 하드코딩된 샘플 맛집 3개 (나중에 Firestore로 교체).
+// address/phone/hours/menu/videoId/viewCount는 화면 2 테스트용 더미 데이터.
 const _sampleRestaurants = [
-  _Restaurant(name: '진앤키노', lat: 36.3519, lng: 127.4250),
-  _Restaurant(name: '목수정', lat: 36.3226, lng: 127.4086),
-  _Restaurant(name: '성심당', lat: 36.3286, lng: 127.4276),
+  Restaurant(
+    id: '진앤키노',
+    name: '진앤키노',
+    address: '대전 서구 관저동 123-45',
+    lat: 36.3519,
+    lng: 127.4250,
+    phone: '042-000-0001',
+    hours: '매일 11:00 - 21:00',
+    menu: '트러플 파스타, 화덕피자',
+    videoId: 'YHTMM5YXpQU',
+    viewCount: 12345,
+  ),
+  Restaurant(
+    id: '목수정',
+    name: '목수정',
+    address: '대전 유성구 봉명동 67-8',
+    lat: 36.3226,
+    lng: 127.4086,
+    phone: '042-000-0002',
+    hours: '매일 10:30 - 20:30 (수요일 휴무)',
+    menu: '한우 육개장, 갈비탕',
+    videoId: 'Ds3DwK8fdhQ',
+    viewCount: 8421,
+  ),
+  Restaurant(
+    id: '성심당',
+    name: '성심당',
+    address: '대전 중구 대종로480번길 15',
+    lat: 36.3286,
+    lng: 127.4276,
+    phone: '042-000-0003',
+    hours: '매일 08:00 - 22:00',
+    menu: '튀김소보로, 부추빵',
+    videoId: 'BIxmp63YnFE',
+    viewCount: 98765,
+  ),
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -38,12 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
         position: NLatLng(restaurant.lat, restaurant.lng),
       );
       marker.setOnTapListener((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(restaurant.name),
-            duration: const Duration(seconds: 1),
-          ),
-        );
+        showRestaurantDetailSheet(context, restaurant);
       });
       overlays.add(marker);
     }
