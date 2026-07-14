@@ -18,7 +18,8 @@ class MyApp extends StatelessWidget {
       title: '맠카로드',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        // 맠카님 테마 색상
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00887A)),
         useMaterial3: true,
       ),
       home: const HomeScreen(),

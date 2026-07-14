@@ -19,7 +19,12 @@
 - 상태관리: setState 우선
 
 ## Firestore 스키마 (restaurants 컬렉션)
-name, address, lat, lng, phone, hours, menu, videoId, publishedAt, viewCount, viewCountAt
+name, address, lat, lng, phone, hours, menu, videoId, publishedAt, viewCount, viewCountAt, category
+
+category: 장소 유형 — restaurant(식당) / cafeDessert(카페·디저트) / attraction(관광명소). 지도 마커의 색상·아이콘 구분에 사용.
+
+## 테마 색상
+맠카님 테마 색상 #00887A를 앱 기본 시드 컬러로 사용한다 (`ColorScheme.fromSeed`). 임의로 다른 색으로 바꾸지 말 것.
 
 ## MVP 화면 구성
 1. 메인 지도: NaverMap 전체 배경 + Stack/Positioned로 Floating 검색창 + 마커 + 내위치 FAB + 하단 배너 자리
