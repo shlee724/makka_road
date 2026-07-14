@@ -35,7 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
             await NOverlayImage.fromWidget(
           context: context,
           size: const Size(36, 36),
-          widget: _CategoryMarkerIcon(category: category, isFavorite: isFavorite),
+          widget:
+              _CategoryMarkerIcon(category: category, isFavorite: isFavorite),
         );
       }
     }
@@ -51,6 +52,9 @@ class _HomeScreenState extends State<HomeScreen> {
           restaurant.category,
           favoriteIds.contains(restaurant.id),
         )],
+        // 일정 줌 레벨 이상으로 확대해야 마커 아래 가게 이름이 보이도록.
+        caption:
+            NOverlayCaption(text: restaurant.name, minZoom: _captionMinZoom),
       );
       marker.setOnTapListener((_) => _openRestaurant(restaurant));
       _markersById[restaurant.id] = marker;
@@ -61,7 +65,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 마커 탭과 검색 결과 선택이 공통으로 쓰는 흐름: 필요하면 카메라를 이동시키고,
   // 상세 시트를 연 뒤 닫히면 즐겨찾기 변경 여부를 다시 확인해 마커 아이콘을 맞춘다.
-  Future<void> _openRestaurant(Restaurant restaurant, {bool moveCamera = false}) async {
+  Future<void> _openRestaurant(Restaurant restaurant,
+      {bool moveCamera = false}) async {
     if (moveCamera) {
       await _mapController?.updateCamera(
         NCameraUpdate.scrollAndZoomTo(
@@ -165,20 +170,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   customBorder: const StadiumBorder(),
                   onTap: _openFavorites,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.star,
                           size: 20,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '즐겨찾기',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -210,6 +219,9 @@ String _markerIconKey(RestaurantCategory category, bool isFavorite) =>
 
 // 즐겨찾기 마커 테두리: 금색보다 눈에 잘 띄는 형광 라임색.
 const _favoriteBorderColor = Color(0xFF39FF14);
+
+// 이 줌 레벨 이상으로 확대해야 마커 캡션(가게 이름)이 보인다.
+const _captionMinZoom = 12.0;
 
 // 마커 아이콘: 카테고리 색상 원 안에 카테고리 아이콘.
 // 즐겨찾기한 곳은 테두리를 금색으로 바꾸고 우측 상단에 별 배지를 붙인다.
