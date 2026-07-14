@@ -3,6 +3,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/restaurant.dart';
+import '../services/favorites_service.dart';
 import 'restaurant_detail_sheet.dart';
 
 // 하드코딩된 샘플 맛집 3개 (나중에 Firestore로 교체).
@@ -62,14 +63,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _onMapReady(NaverMapController controller) async {
     _mapController = controller;
 
-    // 카테고리별 마커 아이콘은 한 번씩만 만들어서 재사용한다.
-    final categoryIcons = <RestaurantCategory, NOverlayImage>{};
+    final favoriteIds = await FavoritesService.getFavoriteIds();
+
+    // (카테고리, 즐겨찾기 여부) 조합별 마커 아이콘을 한 번씩만 만들어서 재사용한다.
+    final markerIcons = <String, NOverlayImage>{};
     for (final category in RestaurantCategory.values) {
-      categoryIcons[category] = await NOverlayImage.fromWidget(
-        context: context,
-        size: const Size(36, 36),
-        widget: _CategoryMarkerIcon(category: category),
-      );
+      for (final isFavorite in [false, true]) {
+        if (!mounted) return;
+        markerIcons[_markerIconKey(category, isFavorite)] =
+            await NOverlayImage.fromWidget(
+          context: context,
+          size: const Size(36, 36),
+          widget: _CategoryMarkerIcon(category: category, isFavorite: isFavorite),
+        );
+      }
     }
 
     // 마커 3개 생성 후 지도에 추가
@@ -78,10 +85,18 @@ class _HomeScreenState extends State<HomeScreen> {
       final marker = NMarker(
         id: restaurant.id,
         position: NLatLng(restaurant.lat, restaurant.lng),
-        icon: categoryIcons[restaurant.category],
+        icon: markerIcons[_markerIconKey(
+          restaurant.category,
+          favoriteIds.contains(restaurant.id),
+        )],
       );
-      marker.setOnTapListener((_) {
-        showRestaurantDetailSheet(context, restaurant);
+      marker.setOnTapListener((_) async {
+        // 시트가 닫힌 뒤에 즐겨찾기가 바뀌었을 수 있으니 마커 아이콘을 다시 맞춘다.
+        await showRestaurantDetailSheet(context, restaurant);
+        final isFavorite = await FavoritesService.isFavorite(restaurant.id);
+        marker.setIcon(
+          markerIcons[_markerIconKey(restaurant.category, isFavorite)],
+        );
       });
       overlays.add(marker);
     }
@@ -133,21 +148,49 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+String _markerIconKey(RestaurantCategory category, bool isFavorite) =>
+    '${category.name}_$isFavorite';
+
+// 즐겨찾기 마커 테두리: 금색보다 눈에 잘 띄는 형광 라임색.
+const _favoriteBorderColor = Color(0xFF39FF14);
+
 // 마커 아이콘: 카테고리 색상 원 안에 카테고리 아이콘.
+// 즐겨찾기한 곳은 테두리를 금색으로 바꾸고 우측 상단에 별 배지를 붙인다.
 class _CategoryMarkerIcon extends StatelessWidget {
   final RestaurantCategory category;
+  final bool isFavorite;
 
-  const _CategoryMarkerIcon({required this.category});
+  const _CategoryMarkerIcon({required this.category, required this.isFavorite});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: category.color,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-      ),
-      child: Icon(category.icon, color: Colors.white, size: 18),
+    return Stack(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: category.color,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isFavorite ? _favoriteBorderColor : Colors.white,
+              width: isFavorite ? 3 : 2,
+            ),
+          ),
+          child: Icon(category.icon, color: Colors.white, size: 18),
+        ),
+        if (isFavorite)
+          const Positioned(
+            top: 0,
+            right: 0,
+            child: Icon(
+              Icons.star,
+              color: Colors.amber,
+              size: 14,
+              shadows: [Shadow(color: Colors.black54, blurRadius: 2)],
+            ),
+          ),
+      ],
     );
   }
 }

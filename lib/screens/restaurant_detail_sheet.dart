@@ -8,8 +8,10 @@ import '../services/external_links_service.dart';
 import '../services/favorites_service.dart';
 
 // 마커를 탭하면 이 바텀시트를 띄운다.
-void showRestaurantDetailSheet(BuildContext context, Restaurant restaurant) {
-  showModalBottomSheet(
+// 반환되는 Future는 시트가 닫힐 때 완료되므로, 호출부에서 즐겨찾기 변경 여부를
+// 다시 확인하는 용도로 쓸 수 있다.
+Future<void> showRestaurantDetailSheet(BuildContext context, Restaurant restaurant) {
+  return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
