@@ -12,8 +12,8 @@ class _Restaurant {
 }
 
 const _sampleRestaurants = [
-  _Restaurant(name: '진천식당', lat: 36.3522, lng: 127.3845),
-  _Restaurant(name: '팔각도', lat: 36.3627, lng: 127.3472),
+  _Restaurant(name: '진앤키노', lat: 36.3519, lng: 127.4250),
+  _Restaurant(name: '목수정', lat: 36.3226, lng: 127.4086),
   _Restaurant(name: '성심당', lat: 36.3286, lng: 127.4276),
 ];
 
