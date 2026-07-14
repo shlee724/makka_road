@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
@@ -74,7 +76,7 @@ class _RestaurantDetailSheetState extends State<RestaurantDetailSheet> {
     final restaurant = widget.restaurant;
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.6,
+      initialChildSize: 0.75,
       minChildSize: 0.3,
       maxChildSize: 0.92,
       expand: false,
@@ -86,7 +88,14 @@ class _RestaurantDetailSheetState extends State<RestaurantDetailSheet> {
           ),
           child: ListView(
             controller: scrollController,
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            // 하단에 시스템 내비게이션 컨트롤 영역만큼 여백을 더해서
+            // "유튜브에서 보기" 버튼이 컨트롤에 가리지 않게 한다.
+            padding: EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              24 + MediaQuery.of(context).padding.bottom,
+            ),
             children: [
               _DragHandle(),
               const SizedBox(height: 12),
@@ -142,7 +151,19 @@ class _RestaurantDetailSheetState extends State<RestaurantDetailSheet> {
               const SizedBox(height: 16),
               AspectRatio(
                 aspectRatio: 9 / 16,
-                child: YoutubePlayer(controller: _youtubeController),
+                child: YoutubePlayer(
+                  controller: _youtubeController,
+                  // 기본값(true)이면 영상 위 세로 드래그를 전체화면 전환
+                  // 제스처로 가로채서 시트를 끌어올리고 내릴 수 없게 된다.
+                  enableFullScreenOnVerticalDrag: false,
+                  // 세로 드래그를 웹뷰가 독점하지 않고 바깥 시트와 경쟁하게
+                  // 해서, 영상 위에서도 시트를 드래그할 수 있게 한다.
+                  gestureRecognizers: {
+                    Factory<VerticalDragGestureRecognizer>(
+                      () => VerticalDragGestureRecognizer(),
+                    ),
+                  },
+                ),
               ),
               Center(
                 child: TextButton.icon(
