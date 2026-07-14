@@ -114,8 +114,13 @@ class _RestaurantDetailSheetState extends State<RestaurantDetailSheet> {
                 ],
               ),
               Text(
-                '조회수 ${restaurant.viewCount}회',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                _viewCountLabel(restaurant.viewCount),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: _viewCountColor(restaurant.viewCount),
+                      fontWeight: restaurant.viewCount >= 10000
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
               ),
               const Divider(height: 24),
               _InfoRow(icon: Icons.location_on_outlined, text: restaurant.address, onTap: _copyAddress),
@@ -220,4 +225,29 @@ class _InfoRow extends StatelessWidget {
       ),
     );
   }
+}
+
+// 100만 이상: 진한 빨강 / 10만 이상: 진한 주황 / 1만 이상: 검정 굵게 / 그 미만: 검정 보통.
+Color _viewCountColor(int viewCount) {
+  if (viewCount >= 1000000) return Colors.red[700]!;
+  if (viewCount >= 100000) return Colors.orange[900]!;
+  return Colors.black;
+}
+
+String _viewCountLabel(int viewCount) {
+  if (viewCount >= 10000) {
+    return '조회수 ${viewCount ~/ 10000}만회';
+  }
+  return '조회수 ${_withThousandsComma(viewCount)}회';
+}
+
+String _withThousandsComma(int value) {
+  final digits = value.toString();
+  final buffer = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    final remaining = digits.length - i;
+    if (i != 0 && remaining % 3 == 0) buffer.write(',');
+    buffer.write(digits[i]);
+  }
+  return buffer.toString();
 }

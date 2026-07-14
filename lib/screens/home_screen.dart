@@ -18,7 +18,7 @@ const _sampleRestaurants = [
     hours: '매일 22:00 - 다음 날 05:00 (월, 수 정기휴무)',
     menu: '오믈렛',
     videoId: 'YHTMM5YXpQU',
-    viewCount: 12345,
+    viewCount: 13600000,
     category: RestaurantCategory.restaurant,
   ),
   Restaurant(
@@ -31,7 +31,7 @@ const _sampleRestaurants = [
     hours: '매일 12:00 - 22:00',
     menu: '치즈 한 모, 자몽 쥬스',
     videoId: 'Ds3DwK8fdhQ',
-    viewCount: 8421,
+    viewCount: 4950000,
     category: RestaurantCategory.cafeDessert,
   ),
   Restaurant(
@@ -44,7 +44,7 @@ const _sampleRestaurants = [
     hours: '매일 08:00 - 22:00',
     menu: '튀김소보로, 부추빵',
     videoId: 'BIxmp63YnFE',
-    viewCount: 98765,
+    viewCount: 2980000,
     category: RestaurantCategory.cafeDessert,
   ),
 ];
