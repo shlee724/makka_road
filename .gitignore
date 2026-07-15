@@ -46,3 +46,5 @@ app.*.map.json
 
 # API 키 — 절대 커밋하지 말 것
 lib/config/naver_map_key.dart
+serviceAccountKey.json
+upload_to_firestore.py

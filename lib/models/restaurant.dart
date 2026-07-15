@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 // 장소 유형. 지도 마커의 색상/아이콘 구분에 사용한다.
@@ -27,7 +28,6 @@ enum RestaurantCategory {
 }
 
 // Firestore restaurants 컬렉션과 매핑될 맛집 모델.
-// 아직 Firestore 연동 전이라 home_screen.dart에서 더미 데이터로 생성해 사용한다.
 class Restaurant {
   final String id;
   final String name;
@@ -54,4 +54,24 @@ class Restaurant {
     required this.viewCount,
     required this.category,
   });
+
+  // upload_to_firestore.py가 videoId를 문서 ID로 사용해 업로드하므로 doc.id와 일치한다.
+  factory Restaurant.fromFirestore(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    return Restaurant(
+      id: doc.id,
+      name: data['name'] as String,
+      address: data['address'] as String,
+      lat: (data['lat'] as num).toDouble(),
+      lng: (data['lng'] as num).toDouble(),
+      phone: data['phone'] as String,
+      hours: data['hours'] as String,
+      menu: data['menu'] as String,
+      videoId: data['videoId'] as String,
+      viewCount: (data['viewCount'] as num).toInt(),
+      category: RestaurantCategory.values.byName(data['category'] as String),
+    );
+  }
 }

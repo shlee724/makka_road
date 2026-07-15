@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1013901044498",
+    "project_id": "makka-road",
+    "storage_bucket": "makka-road.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1013901044498:android:1eeb6134cd29d55beaa1cb",
+        "android_client_info": {
+          "package_name": "com.example.makka_road"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQLaO_RxICkoWSQpFzuqh3zLs2c5gtIgk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

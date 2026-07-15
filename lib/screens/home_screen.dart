@@ -1,8 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../data/sample_restaurants.dart';
 import '../models/restaurant.dart';
 import '../services/favorites_service.dart';
 import '../widgets/restaurant_search_bar.dart';
@@ -20,10 +20,39 @@ class _HomeScreenState extends State<HomeScreen> {
   NaverMapController? _mapController;
   final Map<String, NMarker> _markersById = {};
   Map<String, NOverlayImage> _markerIcons = {};
+  List<Restaurant> _restaurants = [];
+  late final Future<List<Restaurant>> _restaurantsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _restaurantsFuture = _fetchRestaurants();
+  }
+
+  // 검색창은 지도가 준비되기 전에도 목록이 필요해서 setState로 별도 반영하고,
+  // _onMapReady는 같은 Future를 await해 마커를 만든다 (조회는 한 번만 일어남).
+  Future<List<Restaurant>> _fetchRestaurants() async {
+    try {
+      final snapshot =
+          await FirebaseFirestore.instance.collection('restaurants').get();
+      final restaurants =
+          snapshot.docs.map(Restaurant.fromFirestore).toList();
+      if (mounted) setState(() => _restaurants = restaurants);
+      return restaurants;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('맛집 정보를 불러오지 못했습니다.')),
+        );
+      }
+      return [];
+    }
+  }
 
   Future<void> _onMapReady(NaverMapController controller) async {
     _mapController = controller;
 
+    final restaurants = await _restaurantsFuture;
     final favoriteIds = await FavoritesService.getFavoriteIds();
 
     // (카테고리, 즐겨찾기 여부) 조합별 마커 아이콘을 한 번씩만 만들어서 재사용한다.
@@ -44,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 마커 3개 생성 후 지도에 추가
     final Set<NAddableOverlay> overlays = {};
-    for (final restaurant in sampleRestaurants) {
+    for (final restaurant in restaurants) {
       final marker = NMarker(
         id: restaurant.id,
         position: NLatLng(restaurant.lat, restaurant.lng),
@@ -89,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openFavorites() async {
     final selected = await Navigator.push<Restaurant>(
       context,
-      MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+      MaterialPageRoute(builder: (_) => FavoritesScreen(restaurants: _restaurants)),
     );
     if (selected == null || !mounted) return;
     await _openRestaurant(selected, moveCamera: true);
@@ -137,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: RestaurantSearchBar(
-                  restaurants: sampleRestaurants,
+                  restaurants: _restaurants,
                   onSelect: (restaurant) =>
                       _openRestaurant(restaurant, moveCamera: true),
                 ),
