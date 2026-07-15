@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +32,14 @@ class RestaurantDetailSheet extends StatefulWidget {
 
 class _RestaurantDetailSheetState extends State<RestaurantDetailSheet> {
   bool _isFavorite = false;
+  bool _playbackFailed = false;
   late final YoutubePlayerController _youtubeController;
+  Timer? _playbackTimeoutTimer;
+
+  // 임베딩이 막힌 일부 영상은 공식 onError 콜백 없이 그냥 "Please try again
+  // later" 화면으로 멈춰있기만 해서, 일정 시간 안에 재생 가능 상태(cued 이상)에
+  // 도달하지 못하면 재생 실패로 간주한다.
+  static const _playbackTimeout = Duration(seconds: 8);
 
   @override
   void initState() {
@@ -47,10 +56,33 @@ class _RestaurantDetailSheetState extends State<RestaurantDetailSheet> {
         origin: 'https://www.youtube-nocookie.com',
       ),
     );
+    _youtubeController.listen((value) {
+      if (!mounted) return;
+      if (value.hasError) {
+        _playbackTimeoutTimer?.cancel();
+        setState(() => _playbackFailed = true);
+      } else if (_isPlayableState(value.playerState)) {
+        _playbackTimeoutTimer?.cancel();
+      }
+    });
+    _playbackTimeoutTimer = Timer(_playbackTimeout, () {
+      if (!mounted) return;
+      if (!_isPlayableState(_youtubeController.value.playerState)) {
+        setState(() => _playbackFailed = true);
+      }
+    });
   }
+
+  static bool _isPlayableState(PlayerState state) =>
+      state == PlayerState.cued ||
+      state == PlayerState.playing ||
+      state == PlayerState.buffering ||
+      state == PlayerState.paused ||
+      state == PlayerState.ended;
 
   @override
   void dispose() {
+    _playbackTimeoutTimer?.cancel();
     _youtubeController.close();
     super.dispose();
   }
@@ -158,19 +190,23 @@ class _RestaurantDetailSheetState extends State<RestaurantDetailSheet> {
               const SizedBox(height: 16),
               AspectRatio(
                 aspectRatio: 9 / 16,
-                child: YoutubePlayer(
-                  controller: _youtubeController,
-                  // 기본값(true)이면 영상 위 세로 드래그를 전체화면 전환
-                  // 제스처로 가로채서 시트를 끌어올리고 내릴 수 없게 된다.
-                  enableFullScreenOnVerticalDrag: false,
-                  // 세로 드래그를 웹뷰가 독점하지 않고 바깥 시트와 경쟁하게
-                  // 해서, 영상 위에서도 시트를 드래그할 수 있게 한다.
-                  gestureRecognizers: {
-                    Factory<VerticalDragGestureRecognizer>(
-                      () => VerticalDragGestureRecognizer(),
-                    ),
-                  },
-                ),
+                // 채널이 임베디드 재생을 막아둔 영상은 재생 대신 에러 화면/검은
+                // 화면으로 나오므로, _playbackFailed일 때 안내 문구로 대체한다.
+                child: _playbackFailed
+                    ? const _VideoUnavailable()
+                    : YoutubePlayer(
+                        controller: _youtubeController,
+                        // 기본값(true)이면 영상 위 세로 드래그를 전체화면 전환
+                        // 제스처로 가로채서 시트를 끌어올리고 내릴 수 없게 된다.
+                        enableFullScreenOnVerticalDrag: false,
+                        // 세로 드래그를 웹뷰가 독점하지 않고 바깥 시트와 경쟁하게
+                        // 해서, 영상 위에서도 시트를 드래그할 수 있게 한다.
+                        gestureRecognizers: {
+                          Factory<VerticalDragGestureRecognizer>(
+                            () => VerticalDragGestureRecognizer(),
+                          ),
+                        },
+                      ),
               ),
               Center(
                 child: TextButton.icon(
@@ -183,6 +219,30 @@ class _RestaurantDetailSheetState extends State<RestaurantDetailSheet> {
           ),
         );
       },
+    );
+  }
+}
+
+// 채널이 임베디드 재생을 허용하지 않는 영상(에러 코드 101/150 등)일 때 보여줄 안내.
+class _VideoUnavailable extends StatelessWidget {
+  const _VideoUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            '이 영상은 앱 안에서 재생할 수 없어요.\n아래 "유튜브에서 보기"를 이용해주세요.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -212,6 +272,8 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (text.isEmpty) return const SizedBox.shrink();
+
     return InkWell(
       onTap: onTap,
       child: Padding(

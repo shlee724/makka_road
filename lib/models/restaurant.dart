@@ -66,9 +66,10 @@ class Restaurant {
       address: data['address'] as String,
       lat: (data['lat'] as num).toDouble(),
       lng: (data['lng'] as num).toDouble(),
-      phone: data['phone'] as String,
-      hours: data['hours'] as String,
-      menu: data['menu'] as String,
+      // 관광명소 등은 전화/영업시간/메뉴가 없을 수 있어 비워둔 값을 허용한다.
+      phone: data['phone'] as String? ?? '',
+      hours: data['hours'] as String? ?? '',
+      menu: data['menu'] as String? ?? '',
       videoId: data['videoId'] as String,
       viewCount: (data['viewCount'] as num).toInt(),
       category: RestaurantCategory.values.byName(data['category'] as String),

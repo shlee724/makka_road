@@ -40,6 +40,9 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) setState(() => _restaurants = restaurants);
       return restaurants;
     } catch (e) {
+      // 화면에는 안내 메시지만 보여주고, 실제 원인은 로그로 남겨서
+      // (adb logcat / flutter run 콘솔) 재현 안 되는 문제도 추적 가능하게 한다.
+      debugPrint('맛집 정보 로딩 실패: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('맛집 정보를 불러오지 못했습니다.')),
