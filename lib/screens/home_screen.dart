@@ -278,7 +278,7 @@ class _CategoryMarkerIcon extends StatelessWidget {
               width: isFavorite ? 3 : 2,
             ),
           ),
-          child: Icon(category.icon, color: Colors.white, size: 18),
+          child: Icon(category.icon, color: Colors.white, size: category.iconSize),
         ),
         if (isFavorite)
           const Positioned(

@@ -5,18 +5,21 @@ import 'package:flutter/material.dart';
 enum RestaurantCategory {
   restaurant,
   cafeDessert,
-  attraction;
+  attraction,
+  bakery;
 
   String get label => switch (this) {
         RestaurantCategory.restaurant => '식당',
         RestaurantCategory.cafeDessert => '카페·디저트',
         RestaurantCategory.attraction => '관광명소',
+        RestaurantCategory.bakery => '베이커리',
       };
 
   IconData get icon => switch (this) {
         RestaurantCategory.restaurant => Icons.restaurant,
         RestaurantCategory.cafeDessert => Icons.local_cafe,
         RestaurantCategory.attraction => Icons.photo_camera,
+        RestaurantCategory.bakery => Icons.bakery_dining,
       };
 
   // 맠카님 테마 색상(#00887A)을 기준으로 잡은 카테고리별 마커 색상.
@@ -24,6 +27,13 @@ enum RestaurantCategory {
         RestaurantCategory.restaurant => const Color(0xFF00887A),
         RestaurantCategory.cafeDessert => const Color(0xFFC2740A),
         RestaurantCategory.attraction => const Color(0xFF6B5CE0),
+        RestaurantCategory.bakery => const Color(0xFFFFC107),
+      };
+
+  // 마커 원 안 아이콘 크기. 기본 18, 베이커리만 조금 더 크게.
+  double get iconSize => switch (this) {
+        RestaurantCategory.bakery => 22,
+        _ => 18,
       };
 }
 
