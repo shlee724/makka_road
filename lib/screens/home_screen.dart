@@ -9,6 +9,7 @@ import '../widgets/category_filter_sheet.dart';
 import '../widgets/category_marker_icon.dart';
 import '../widgets/filter_button.dart';
 import '../widgets/restaurant_search_bar.dart';
+import '../widgets/view_count_filter_chips.dart';
 import 'favorites_screen.dart';
 import 'restaurant_detail_sheet.dart';
 
@@ -26,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Restaurant> _restaurants = [];
   late final Future<List<Restaurant>> _restaurantsFuture;
   Set<RestaurantCategory> _selectedCategories = {...RestaurantCategory.values};
+  int? _minViewCount;
 
   @override
   void initState() {
@@ -97,15 +99,18 @@ class _HomeScreenState extends State<HomeScreen> {
       overlays.add(marker);
     }
     await controller.addOverlayAll(overlays);
-    _applyCategoryFilter();
+    _applyFilters();
   }
 
-  // 체크된 카테고리에 해당하는 마커만 보이도록 나머지는 숨긴다.
+  // 체크된 카테고리 + 조회수 임계값을 모두 만족하는 마커만 보이도록 나머지는 숨긴다.
   // (오버레이를 지웠다 다시 그리지 않고 isVisible만 바꿔서 가볍게 처리)
-  void _applyCategoryFilter() {
+  void _applyFilters() {
     for (final restaurant in _restaurants) {
+      final matchesCategory = _selectedCategories.contains(restaurant.category);
+      final matchesViewCount =
+          _minViewCount == null || restaurant.viewCount >= _minViewCount!;
       _markersById[restaurant.id]
-          ?.setIsVisible(_selectedCategories.contains(restaurant.category));
+          ?.setIsVisible(matchesCategory && matchesViewCount);
     }
   }
 
@@ -115,9 +120,14 @@ class _HomeScreenState extends State<HomeScreen> {
       selected: _selectedCategories,
       onChanged: (selected) {
         setState(() => _selectedCategories = selected);
-        _applyCategoryFilter();
+        _applyFilters();
       },
     );
+  }
+
+  void _onViewCountThresholdChanged(int? threshold) {
+    setState(() => _minViewCount = threshold);
+    _applyFilters();
   }
 
   // 마커 탭과 검색 결과 선택이 공통으로 쓰는 흐름: 필요하면 카메라를 이동시키고,
@@ -193,21 +203,30 @@ class _HomeScreenState extends State<HomeScreen> {
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
                   children: [
-                    Expanded(
-                      child: RestaurantSearchBar(
-                        restaurants: _restaurants,
-                        onSelect: (restaurant) =>
-                            _openRestaurant(restaurant, moveCamera: true),
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: RestaurantSearchBar(
+                            restaurants: _restaurants,
+                            onSelect: (restaurant) =>
+                                _openRestaurant(restaurant, moveCamera: true),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilterButton(
+                          isActive: _selectedCategories.length !=
+                              RestaurantCategory.values.length,
+                          onPressed: _openCategoryFilter,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    FilterButton(
-                      isActive:
-                          _selectedCategories.length != RestaurantCategory.values.length,
-                      onPressed: _openCategoryFilter,
+                    const SizedBox(height: 8),
+                    ViewCountFilterChips(
+                      selectedThreshold: _minViewCount,
+                      onChanged: _onViewCountThresholdChanged,
                     ),
                   ],
                 ),
