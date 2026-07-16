@@ -7,10 +7,8 @@ import '../models/restaurant.dart';
 import '../services/favorites_service.dart';
 import '../widgets/category_filter_sheet.dart';
 import '../widgets/category_marker_icon.dart';
-import '../widgets/filter_button.dart';
+import '../widgets/home_top_bar.dart';
 import '../widgets/pill_button.dart';
-import '../widgets/restaurant_search_bar.dart';
-import '../widgets/view_count_filter_chips.dart';
 import 'restaurant_detail_sheet.dart';
 import 'restaurant_list_sheet.dart';
 
@@ -29,6 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
   late final Future<List<Restaurant>> _restaurantsFuture;
   Set<RestaurantCategory> _selectedCategories = {...RestaurantCategory.values};
   int? _minViewCount;
+  bool _favoritesOnly = false;
+  Set<String> _favoriteIds = {};
 
   @override
   void initState() {
@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _mapController = controller;
 
     final restaurants = await _restaurantsFuture;
-    final favoriteIds = await FavoritesService.getFavoriteIds();
+    _favoriteIds = await FavoritesService.getFavoriteIds();
 
     // (카테고리, 즐겨찾기 여부) 조합별 마커 아이콘을 한 번씩만 만들어서 재사용한다.
     final markerIcons = <String, NOverlayImage>{};
@@ -89,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
         position: NLatLng(restaurant.lat, restaurant.lng),
         icon: markerIcons[_markerIconKey(
           restaurant.category,
-          favoriteIds.contains(restaurant.id),
+          _favoriteIds.contains(restaurant.id),
         )],
         // 일정 줌 레벨 이상으로 확대해야 마커 아래 가게 이름이 보이도록.
         caption:
@@ -103,14 +103,16 @@ class _HomeScreenState extends State<HomeScreen> {
     _applyFilters();
   }
 
-  // 체크된 카테고리 + 조회수 임계값을 모두 만족하는 가게만 남긴다.
+  // 체크된 카테고리 + 조회수 임계값 + 즐겨찾기 여부를 모두 만족하는 가게만 남긴다.
   // '목록' 시트도 이 결과를 그대로 받아 지도에서 보이는 가게와 목록을 일치시킨다.
   List<Restaurant> get _filteredRestaurants => _restaurants.where((restaurant) {
         final matchesCategory =
             _selectedCategories.contains(restaurant.category);
         final matchesViewCount =
             _minViewCount == null || restaurant.viewCount >= _minViewCount!;
-        return matchesCategory && matchesViewCount;
+        final matchesFavorite =
+            !_favoritesOnly || _favoriteIds.contains(restaurant.id);
+        return matchesCategory && matchesViewCount && matchesFavorite;
       }).toList();
 
   // (오버레이를 지웠다 다시 그리지 않고 isVisible만 바꿔서 가볍게 처리)
@@ -138,6 +140,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _applyFilters();
   }
 
+  void _onFavoritesOnlyChanged(bool value) {
+    setState(() => _favoritesOnly = value);
+    _applyFilters();
+  }
+
   // 마커 탭과 검색 결과 선택이 공통으로 쓰는 흐름: 필요하면 카메라를 이동시키고,
   // 상세 시트를 연 뒤 닫히면 즐겨찾기 변경 여부를 다시 확인해 마커 아이콘을 맞춘다.
   Future<void> _openRestaurant(Restaurant restaurant,
@@ -155,9 +162,15 @@ class _HomeScreenState extends State<HomeScreen> {
     await showRestaurantDetailSheet(context, restaurant);
 
     final isFavorite = await FavoritesService.isFavorite(restaurant.id);
+    if (isFavorite) {
+      _favoriteIds.add(restaurant.id);
+    } else {
+      _favoriteIds.remove(restaurant.id);
+    }
     _markersById[restaurant.id]?.setIcon(
       _markerIcons[_markerIconKey(restaurant.category, isFavorite)],
     );
+    if (_favoritesOnly) _applyFilters();
   }
 
   // '목록' 버튼: 현재 필터로 걸러진(=지도에 보이는) 가게들을 정렬해서 보여준다.
@@ -207,38 +220,17 @@ class _HomeScreenState extends State<HomeScreen> {
             top: 0,
             left: 0,
             right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: RestaurantSearchBar(
-                            restaurants: _restaurants,
-                            onSelect: (restaurant) =>
-                                _openRestaurant(restaurant, moveCamera: true),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilterButton(
-                          isActive: _selectedCategories.length !=
-                              RestaurantCategory.values.length,
-                          onPressed: _openCategoryFilter,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ViewCountFilterChips(
-                      selectedThreshold: _minViewCount,
-                      onChanged: _onViewCountThresholdChanged,
-                    ),
-                  ],
-                ),
-              ),
+            child: HomeTopBar(
+              restaurants: _restaurants,
+              onSelectRestaurant: (restaurant) =>
+                  _openRestaurant(restaurant, moveCamera: true),
+              isCategoryFilterActive: _selectedCategories.length !=
+                  RestaurantCategory.values.length,
+              onCategoryFilterTap: _openCategoryFilter,
+              favoritesOnly: _favoritesOnly,
+              onFavoritesChanged: _onFavoritesOnlyChanged,
+              selectedThreshold: _minViewCount,
+              onThresholdChanged: _onViewCountThresholdChanged,
             ),
           ),
           // 내 위치 FAB — 탭하면 위치 권한 요청 후 지도 이동
