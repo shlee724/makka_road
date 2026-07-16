@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../models/restaurant.dart';
+import '../services/favorites_service.dart';
 import '../utils/view_count_format.dart';
 
-enum _SortOrder { viewCount, latest }
+enum _ListMode { viewCount, latest, favorites }
 
-// '목록' 버튼으로 여는 시트. 지도에 현재 필터로 걸러진 가게들을 정렬해서 보여주고,
-// 항목을 탭하면 시트를 닫고 그 가게로 이동시킨다 (즐겨찾기 목록과 같은 흐름).
+// '목록' 버튼으로 여는 시트. 지도에 현재 필터로 걸러진 가게들을 조회수순/최신순으로
+// 정렬해서 보여주거나, '즐겨찾기' 탭으로 즐겨찾기한 가게만 보여준다.
+// 항목을 탭하면 시트를 닫고 그 가게로 이동시킨다.
 Future<void> showRestaurantListSheet(
   BuildContext context, {
   required List<Restaurant> restaurants,
@@ -39,17 +41,46 @@ class _RestaurantListSheetContent extends StatefulWidget {
 
 class _RestaurantListSheetContentState
     extends State<_RestaurantListSheetContent> {
-  _SortOrder _sortOrder = _SortOrder.viewCount;
+  _ListMode _mode = _ListMode.viewCount;
+  Set<String> _favoriteIds = {};
 
-  List<Restaurant> get _sortedRestaurants {
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteIds();
+  }
+
+  Future<void> _loadFavoriteIds() async {
+    final ids = await FavoritesService.getFavoriteIds();
+    if (mounted) setState(() => _favoriteIds = ids);
+  }
+
+  List<Restaurant> get _displayedRestaurants {
+    if (_mode == _ListMode.favorites) {
+      return widget.restaurants
+          .where((r) => _favoriteIds.contains(r.id))
+          .toList();
+    }
     final sorted = [...widget.restaurants];
-    switch (_sortOrder) {
-      case _SortOrder.viewCount:
-        sorted.sort((a, b) => b.viewCount.compareTo(a.viewCount));
-      case _SortOrder.latest:
-        sorted.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+    if (_mode == _ListMode.viewCount) {
+      sorted.sort((a, b) => b.viewCount.compareTo(a.viewCount));
+    } else {
+      sorted.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
     }
     return sorted;
+  }
+
+  // 조회수순/최신순은 각각 조회수·주소를 보여주고, 즐겨찾기는 추천메뉴를 보여준다.
+  // 관광명소 등 메뉴가 없는 곳은 주소로 대신한다.
+  String _subtitleFor(Restaurant restaurant) {
+    switch (_mode) {
+      case _ListMode.viewCount:
+        return viewCountLabel(restaurant.viewCount);
+      case _ListMode.latest:
+        return restaurant.address;
+      case _ListMode.favorites:
+        return restaurant.menu.isEmpty ? restaurant.address : restaurant.menu;
+    }
   }
 
   @override
@@ -60,7 +91,7 @@ class _RestaurantListSheetContentState
       maxChildSize: 0.9,
       expand: false,
       builder: (context, scrollController) {
-        final restaurants = _sortedRestaurants;
+        final restaurants = _displayedRestaurants;
         return Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -89,28 +120,45 @@ class _RestaurantListSheetContentState
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      ChoiceChip(
-                        label: const Text('조회수순'),
-                        selected: _sortOrder == _SortOrder.viewCount,
-                        onSelected: (_) =>
-                            setState(() => _sortOrder = _SortOrder.viewCount),
-                      ),
-                      const SizedBox(width: 8),
-                      ChoiceChip(
-                        label: const Text('최신순'),
-                        selected: _sortOrder == _SortOrder.latest,
-                        onSelected: (_) =>
-                            setState(() => _sortOrder = _SortOrder.latest),
-                      ),
-                    ],
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          label: const Text('조회수순'),
+                          selected: _mode == _ListMode.viewCount,
+                          onSelected: (_) =>
+                              setState(() => _mode = _ListMode.viewCount),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: const Text('최신순'),
+                          selected: _mode == _ListMode.latest,
+                          onSelected: (_) =>
+                              setState(() => _mode = _ListMode.latest),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          avatar: const Icon(Icons.star, size: 18),
+                          label: const Text('즐겨찾기'),
+                          selected: _mode == _ListMode.favorites,
+                          onSelected: (_) =>
+                              setState(() => _mode = _ListMode.favorites),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const Divider(height: 17),
                 Expanded(
                   child: restaurants.isEmpty
-                      ? const Center(child: Text('조건에 맞는 맛집이 없어요'))
+                      ? Center(
+                          child: Text(
+                            _mode == _ListMode.favorites
+                                ? '즐겨찾기한 맛집이 없어요'
+                                : '조건에 맞는 맛집이 없어요',
+                          ),
+                        )
                       : ListView.separated(
                           controller: scrollController,
                           itemCount: restaurants.length,
@@ -125,9 +173,7 @@ class _RestaurantListSheetContentState
                               ),
                               title: Text(restaurant.name),
                               subtitle: Text(
-                                _sortOrder == _SortOrder.viewCount
-                                    ? viewCountLabel(restaurant.viewCount)
-                                    : restaurant.address,
+                                _subtitleFor(restaurant),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),

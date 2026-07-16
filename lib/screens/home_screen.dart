@@ -8,10 +8,9 @@ import '../services/favorites_service.dart';
 import '../widgets/category_filter_sheet.dart';
 import '../widgets/category_marker_icon.dart';
 import '../widgets/filter_button.dart';
-import '../widgets/pill_action_bar.dart';
+import '../widgets/pill_button.dart';
 import '../widgets/restaurant_search_bar.dart';
 import '../widgets/view_count_filter_chips.dart';
-import 'favorites_screen.dart';
 import 'restaurant_detail_sheet.dart';
 import 'restaurant_list_sheet.dart';
 
@@ -161,17 +160,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 즐겨찾기 목록에서 가게를 고르면 그 가게로 카메라를 이동하고 상세 시트를 연다.
-  Future<void> _openFavorites() async {
-    final selected = await Navigator.push<Restaurant>(
-      context,
-      MaterialPageRoute(builder: (_) => FavoritesScreen(restaurants: _restaurants)),
-    );
-    if (selected == null || !mounted) return;
-    await _openRestaurant(selected, moveCamera: true);
-  }
-
   // '목록' 버튼: 현재 필터로 걸러진(=지도에 보이는) 가게들을 정렬해서 보여준다.
+  // 즐겨찾기만 보고 싶으면 시트 안의 '즐겨찾기' 칩으로 다시 걸러볼 수 있다.
   Future<void> _openRestaurantList() {
     return showRestaurantListSheet(
       context,
@@ -265,9 +255,10 @@ class _HomeScreenState extends State<HomeScreen> {
             left: 0,
             right: 0,
             bottom: 16,
-            child: PillActionBar(
-              onFavoritesTap: _openFavorites,
-              onListTap: _openRestaurantList,
+            child: PillButton(
+              icon: Icons.list,
+              label: '목록',
+              onTap: _openRestaurantList,
             ),
           ),
         ],
