@@ -50,6 +50,7 @@ class Restaurant {
   final String videoId;
   final int viewCount;
   final RestaurantCategory category;
+  final DateTime publishedAt;
 
   const Restaurant({
     required this.id,
@@ -63,6 +64,7 @@ class Restaurant {
     required this.videoId,
     required this.viewCount,
     required this.category,
+    required this.publishedAt,
   });
 
   // upload_to_firestore.py가 videoId를 문서 ID로 사용해 업로드하므로 doc.id와 일치한다.
@@ -81,6 +83,8 @@ class Restaurant {
       hours: data['hours'] as String? ?? '',
       menu: data['menu'] as String? ?? '',
       videoId: data['videoId'] as String,
+      // upload_to_firestore.py가 'YYYY-MM-DD' 문자열로 저장한다.
+      publishedAt: DateTime.parse(data['publishedAt'] as String),
       viewCount: (data['viewCount'] as num).toInt(),
       category: RestaurantCategory.values.byName(data['category'] as String),
     );

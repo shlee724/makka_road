@@ -8,10 +8,12 @@ import '../services/favorites_service.dart';
 import '../widgets/category_filter_sheet.dart';
 import '../widgets/category_marker_icon.dart';
 import '../widgets/filter_button.dart';
+import '../widgets/pill_action_bar.dart';
 import '../widgets/restaurant_search_bar.dart';
 import '../widgets/view_count_filter_chips.dart';
 import 'favorites_screen.dart';
 import 'restaurant_detail_sheet.dart';
+import 'restaurant_list_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -102,15 +104,22 @@ class _HomeScreenState extends State<HomeScreen> {
     _applyFilters();
   }
 
-  // 체크된 카테고리 + 조회수 임계값을 모두 만족하는 마커만 보이도록 나머지는 숨긴다.
+  // 체크된 카테고리 + 조회수 임계값을 모두 만족하는 가게만 남긴다.
+  // '목록' 시트도 이 결과를 그대로 받아 지도에서 보이는 가게와 목록을 일치시킨다.
+  List<Restaurant> get _filteredRestaurants => _restaurants.where((restaurant) {
+        final matchesCategory =
+            _selectedCategories.contains(restaurant.category);
+        final matchesViewCount =
+            _minViewCount == null || restaurant.viewCount >= _minViewCount!;
+        return matchesCategory && matchesViewCount;
+      }).toList();
+
   // (오버레이를 지웠다 다시 그리지 않고 isVisible만 바꿔서 가볍게 처리)
   void _applyFilters() {
+    final visibleIds = _filteredRestaurants.map((r) => r.id).toSet();
     for (final restaurant in _restaurants) {
-      final matchesCategory = _selectedCategories.contains(restaurant.category);
-      final matchesViewCount =
-          _minViewCount == null || restaurant.viewCount >= _minViewCount!;
       _markersById[restaurant.id]
-          ?.setIsVisible(matchesCategory && matchesViewCount);
+          ?.setIsVisible(visibleIds.contains(restaurant.id));
     }
   }
 
@@ -160,6 +169,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (selected == null || !mounted) return;
     await _openRestaurant(selected, moveCamera: true);
+  }
+
+  // '목록' 버튼: 현재 필터로 걸러진(=지도에 보이는) 가게들을 정렬해서 보여준다.
+  Future<void> _openRestaurantList() {
+    return showRestaurantListSheet(
+      context,
+      restaurants: _filteredRestaurants,
+      onSelect: (restaurant) => _openRestaurant(restaurant, moveCamera: true),
+    );
   }
 
   Future<void> _goToMyLocation() async {
@@ -243,48 +261,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Icon(Icons.my_location),
             ),
           ),
-          // 즐겨찾기 목록 진입 버튼 — 화면 중앙 하단의 납작한 알약 모양 버튼.
-          // FloatingActionButton.extended는 높이(56dp 고정)를 줄일 수 없어서
-          // Material + InkWell로 직접 만들어 높이를 낮췄다.
           Positioned(
             left: 0,
             right: 0,
             bottom: 16,
-            child: Center(
-              child: Material(
-                elevation: 4,
-                color: Theme.of(context).colorScheme.primaryContainer,
-                shape: const StadiumBorder(),
-                child: InkWell(
-                  customBorder: const StadiumBorder(),
-                  onTap: _openFavorites,
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star,
-                          size: 20,
-                          color:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '즐겨찾기',
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onPrimaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            child: PillActionBar(
+              onFavoritesTap: _openFavorites,
+              onListTap: _openRestaurantList,
             ),
           ),
         ],

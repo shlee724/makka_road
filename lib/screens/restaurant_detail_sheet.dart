@@ -8,6 +8,7 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../models/restaurant.dart';
 import '../services/external_links_service.dart';
 import '../services/favorites_service.dart';
+import '../utils/view_count_format.dart';
 
 // 마커를 탭하면 이 바텀시트를 띄운다.
 // 반환되는 Future는 시트가 닫힐 때 완료되므로, 호출부에서 즐겨찾기 변경 여부를
@@ -148,9 +149,9 @@ class _RestaurantDetailSheetState extends State<RestaurantDetailSheet> {
                 ],
               ),
               Text(
-                _viewCountLabel(restaurant.viewCount),
+                viewCountLabel(restaurant.viewCount),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: _viewCountColor(restaurant.viewCount),
+                      color: viewCountColor(restaurant.viewCount),
                       fontWeight: restaurant.viewCount >= 10000
                           ? FontWeight.bold
                           : FontWeight.normal,
@@ -289,29 +290,4 @@ class _InfoRow extends StatelessWidget {
       ),
     );
   }
-}
-
-// 100만 이상: 진한 빨강 / 10만 이상: 진한 주황 / 1만 이상: 검정 굵게 / 그 미만: 검정 보통.
-Color _viewCountColor(int viewCount) {
-  if (viewCount >= 1000000) return Colors.red[700]!;
-  if (viewCount >= 100000) return Colors.orange[900]!;
-  return Colors.black;
-}
-
-String _viewCountLabel(int viewCount) {
-  if (viewCount >= 10000) {
-    return '조회수 ${viewCount ~/ 10000}만회';
-  }
-  return '조회수 ${_withThousandsComma(viewCount)}회';
-}
-
-String _withThousandsComma(int value) {
-  final digits = value.toString();
-  final buffer = StringBuffer();
-  for (var i = 0; i < digits.length; i++) {
-    final remaining = digits.length - i;
-    if (i != 0 && remaining % 3 == 0) buffer.write(',');
-    buffer.write(digits[i]);
-  }
-  return buffer.toString();
 }
