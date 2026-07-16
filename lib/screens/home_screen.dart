@@ -5,6 +5,9 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../models/restaurant.dart';
 import '../services/favorites_service.dart';
+import '../widgets/category_filter_sheet.dart';
+import '../widgets/category_marker_icon.dart';
+import '../widgets/filter_button.dart';
 import '../widgets/restaurant_search_bar.dart';
 import 'favorites_screen.dart';
 import 'restaurant_detail_sheet.dart';
@@ -22,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, NOverlayImage> _markerIcons = {};
   List<Restaurant> _restaurants = [];
   late final Future<List<Restaurant>> _restaurantsFuture;
+  Set<RestaurantCategory> _selectedCategories = {...RestaurantCategory.values};
 
   @override
   void initState() {
@@ -68,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context: context,
           size: const Size(36, 36),
           widget:
-              _CategoryMarkerIcon(category: category, isFavorite: isFavorite),
+              CategoryMarkerIcon(category: category, isFavorite: isFavorite),
         );
       }
     }
@@ -93,6 +97,27 @@ class _HomeScreenState extends State<HomeScreen> {
       overlays.add(marker);
     }
     await controller.addOverlayAll(overlays);
+    _applyCategoryFilter();
+  }
+
+  // 체크된 카테고리에 해당하는 마커만 보이도록 나머지는 숨긴다.
+  // (오버레이를 지웠다 다시 그리지 않고 isVisible만 바꿔서 가볍게 처리)
+  void _applyCategoryFilter() {
+    for (final restaurant in _restaurants) {
+      _markersById[restaurant.id]
+          ?.setIsVisible(_selectedCategories.contains(restaurant.category));
+    }
+  }
+
+  Future<void> _openCategoryFilter() {
+    return showCategoryFilterSheet(
+      context,
+      selected: _selectedCategories,
+      onChanged: (selected) {
+        setState(() => _selectedCategories = selected);
+        _applyCategoryFilter();
+      },
+    );
   }
 
   // 마커 탭과 검색 결과 선택이 공통으로 쓰는 흐름: 필요하면 카메라를 이동시키고,
@@ -168,10 +193,23 @@ class _HomeScreenState extends State<HomeScreen> {
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: RestaurantSearchBar(
-                  restaurants: _restaurants,
-                  onSelect: (restaurant) =>
-                      _openRestaurant(restaurant, moveCamera: true),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: RestaurantSearchBar(
+                        restaurants: _restaurants,
+                        onSelect: (restaurant) =>
+                            _openRestaurant(restaurant, moveCamera: true),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilterButton(
+                      isActive:
+                          _selectedCategories.length != RestaurantCategory.values.length,
+                      onPressed: _openCategoryFilter,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -249,49 +287,5 @@ class _HomeScreenState extends State<HomeScreen> {
 String _markerIconKey(RestaurantCategory category, bool isFavorite) =>
     '${category.name}_$isFavorite';
 
-// 즐겨찾기 마커 테두리: 금색보다 눈에 잘 띄는 형광 라임색.
-const _favoriteBorderColor = Color(0xFF39FF14);
-
 // 이 줌 레벨 이상으로 확대해야 마커 캡션(가게 이름)이 보인다.
 const _captionMinZoom = 12.0;
-
-// 마커 아이콘: 카테고리 색상 원 안에 카테고리 아이콘.
-// 즐겨찾기한 곳은 테두리를 금색으로 바꾸고 우측 상단에 별 배지를 붙인다.
-class _CategoryMarkerIcon extends StatelessWidget {
-  final RestaurantCategory category;
-  final bool isFavorite;
-
-  const _CategoryMarkerIcon({required this.category, required this.isFavorite});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: category.color,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isFavorite ? _favoriteBorderColor : Colors.white,
-              width: isFavorite ? 3 : 2,
-            ),
-          ),
-          child: Icon(category.icon, color: Colors.white, size: category.iconSize),
-        ),
-        if (isFavorite)
-          const Positioned(
-            top: 0,
-            right: 0,
-            child: Icon(
-              Icons.star,
-              color: Colors.amber,
-              size: 14,
-              shadows: [Shadow(color: Colors.black54, blurRadius: 2)],
-            ),
-          ),
-      ],
-    );
-  }
-}
