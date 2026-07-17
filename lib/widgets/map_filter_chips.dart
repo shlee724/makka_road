@@ -43,11 +43,12 @@ class MapFilterChips extends StatelessWidget {
                 selected: favoritesOnly,
                 onSelected: onFavoritesChanged,
                 showCheckmark: false,
-                backgroundColor: Colors.white,
+                backgroundColor: colorScheme.surface,
                 selectedColor: colorScheme.primary,
                 labelStyle: TextStyle(
-                  color:
-                      favoritesOnly ? colorScheme.onPrimary : Colors.black87,
+                  color: favoritesOnly
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
                 side: BorderSide.none,
@@ -62,12 +63,12 @@ class MapFilterChips extends StatelessWidget {
                   onSelected: (selected) =>
                       onThresholdChanged(selected ? threshold : null),
                   showCheckmark: false,
-                  backgroundColor: Colors.white,
+                  backgroundColor: colorScheme.surface,
                   selectedColor: colorScheme.primary,
                   labelStyle: TextStyle(
                     color: selectedThreshold == threshold
                         ? colorScheme.onPrimary
-                        : Colors.black87,
+                        : colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                   side: BorderSide.none,

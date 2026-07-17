@@ -17,7 +17,7 @@ class FilterButton extends StatelessWidget {
     return Material(
       elevation: 4,
       shape: const CircleBorder(),
-      color: isActive ? colorScheme.primary : Colors.white,
+      color: isActive ? colorScheme.primary : colorScheme.surface,
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onPressed,
@@ -25,7 +25,7 @@ class FilterButton extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Icon(
             Icons.filter_list,
-            color: isActive ? colorScheme.onPrimary : Colors.black87,
+            color: isActive ? colorScheme.onPrimary : colorScheme.onSurface,
           ),
         ),
       ),

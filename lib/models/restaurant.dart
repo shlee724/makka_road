@@ -26,7 +26,7 @@ enum RestaurantCategory {
   Color get color => switch (this) {
         RestaurantCategory.restaurant => const Color(0xFF00887A),
         RestaurantCategory.cafeDessert => const Color(0xFFC2740A),
-        RestaurantCategory.attraction => const Color(0xFF6B5CE0),
+        RestaurantCategory.attraction => const Color(0xFF6E5EA6),
         RestaurantCategory.bakery => const Color(0xFFFFC107),
       };
 

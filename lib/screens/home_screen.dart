@@ -239,6 +239,8 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: 16,
             child: FloatingActionButton(
               heroTag: 'myLocationFab',
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
               onPressed: _goToMyLocation,
               child: const Icon(Icons.my_location),
             ),
@@ -260,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // 회색은 Container 전체(SafeArea 바깥 포함)에 칠해서 시스템 바 뒤까지 이어지게 하고,
       // 실제 배너 높이(50)는 컨트롤에 가리지 않는 안전 영역 안에 배치.
       bottomNavigationBar: Container(
-        color: Colors.grey[200],
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         child: const SafeArea(
           child: SizedBox(height: 50),
         ),

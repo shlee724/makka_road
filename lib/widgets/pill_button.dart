@@ -21,7 +21,7 @@ class PillButton extends StatelessWidget {
     return Center(
       child: Material(
         elevation: 4,
-        color: colorScheme.primaryContainer,
+        color: colorScheme.surface,
         shape: const StadiumBorder(),
         child: InkWell(
           customBorder: const StadiumBorder(),
@@ -31,12 +31,12 @@ class PillButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 20, color: colorScheme.onPrimaryContainer),
+                Icon(icon, size: 20, color: colorScheme.onSurface),
                 const SizedBox(width: 8),
                 Text(
                   label,
                   style: TextStyle(
-                    color: colorScheme.onPrimaryContainer,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

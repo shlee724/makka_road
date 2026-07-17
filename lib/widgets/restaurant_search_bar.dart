@@ -55,6 +55,7 @@ class _RestaurantSearchBarState extends State<RestaurantSearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         Material(
@@ -77,7 +78,7 @@ class _RestaurantSearchBarState extends State<RestaurantSearchBar> {
                       },
                     ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: colorScheme.surface,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(28),
@@ -91,7 +92,7 @@ class _RestaurantSearchBarState extends State<RestaurantSearchBar> {
             margin: const EdgeInsets.only(top: 8),
             constraints: const BoxConstraints(maxHeight: 240),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               boxShadow: const [
                 BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
